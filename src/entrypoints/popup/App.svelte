@@ -7,59 +7,13 @@
 	let isProcessing = false;
 	let errorMessage = '';
 	let dateFormat = 'MM/DD/YYYY';
-	let isAutoFilling = false;
 
 	const placeholders = ['@code', '@section', '@name', '@type', '@location', '@prof'];
 
-	async function copyFromCurrentTab() {
-		try {
-			isAutoFilling = true;
-			errorMessage = '';
-
-			// Get the current active tab
-			const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
-
-			if (!tab?.id) {
-				errorMessage = 'Could not access current tab';
-				return;
-			}
-
-			// Execute script to copy all text content from the page
-			const results = await browser.scripting.executeScript({
-				target: { tabId: tab.id },
-				func: () => {
-					// Select all text on the page
-					document.getSelection()?.selectAllChildren(document.body);
-					// Copy the selection to clipboard
-					document.execCommand('copy');
-					// Return the copied text
-					return document.getSelection()?.toString() || '';
-				}
-			});
-
-			if (results && results[0]?.result) {
-				scheduleData = results[0].result;
-			} else {
-				errorMessage = 'Could not copy content from current tab';
-			}
-		} catch (error) {
-			errorMessage = 'Error copying from current tab: ' + (error as Error).message;
-		} finally {
-			isAutoFilling = false;
-		}
-	}
-
 	async function exportSchedule() {
-		// If textbox is empty, try to copy from current tab first
 		if (!scheduleData.trim()) {
-			await copyFromCurrentTab();
-
-			// If still empty after trying to copy, show error
-			if (!scheduleData.trim()) {
-				errorMessage =
-					'Please paste your Quest schedule data or make sure the current tab contains schedule data';
-				return;
-			}
+			errorMessage = 'Please paste your Quest schedule data in the text area below';
+			return;
 		}
 
 		isProcessing = true;
@@ -106,8 +60,10 @@
 				Make sure your schedule is in "list view"
 			</li>
 			<li class="text-sm leading-relaxed text-gray-700 dark:text-gray-300">
-				Click "Export Schedule" - it will automatically copy from the current tab, or manually paste
-				schedule data below
+				Copy all the schedule data from the page (Ctrl+A, then Ctrl+C)
+			</li>
+			<li class="text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+				Paste the data into the text area below and click "Export Schedule"
 			</li>
 			<li class="text-sm leading-relaxed text-gray-700 dark:text-gray-300">
 				Your schedule.ics file will download automatically
@@ -117,27 +73,15 @@
 
 	<div class="flex flex-col space-y-4">
 		<div class="flex flex-col space-y-1">
-			<div class="flex items-center justify-between">
-				<label for="schedule-data" class="text-sm font-medium text-gray-900 dark:text-white"
-					>Quest schedule data:</label
-				>
-				<button
-					on:click={copyFromCurrentTab}
-					disabled={isAutoFilling}
-					class="text-xs px-2 py-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:bg-gray-300 dark:disabled:bg-gray-600 text-gray-700 dark:text-gray-300 rounded border transition-colors duration-200 disabled:cursor-not-allowed"
-				>
-					{isAutoFilling ? 'Copying...' : 'Copy from current tab'}
-				</button>
-			</div>
+			<label for="schedule-data" class="text-sm font-medium text-gray-900 dark:text-white"
+				>Quest schedule data:</label
+			>
 			<textarea
 				id="schedule-data"
 				bind:value={scheduleData}
-				placeholder={isAutoFilling
-					? 'Copying content from current tab...'
-					: 'Quest schedule data will be copied automatically, or paste manually here...'}
+				placeholder="Paste your Quest schedule data here (copy from the Quest page using Ctrl+A, then Ctrl+C)..."
 				rows="8"
-				disabled={isAutoFilling}
-				class="min-h-[120px] p-2.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs font-mono resize-y focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 dark:placeholder-gray-500 disabled:bg-gray-50 dark:disabled:bg-gray-800 disabled:cursor-not-allowed"
+				class="min-h-[120px] p-2.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-xs font-mono resize-y focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 dark:placeholder-gray-500"
 			></textarea>
 		</div>
 

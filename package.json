@@ -2,7 +2,7 @@
 	"name": "quest-schedule-exporter-browser-extension",
 	"description": "Schedule exporting browser extension for uWaterloo Quest",
 	"private": true,
-	"version": "0.0.0",
+	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
 		"dev": "wxt",
@@ -19,6 +19,7 @@
 	"devDependencies": {
 		"@trivago/prettier-plugin-sort-imports": "^5.2.2",
 		"@tsconfig/svelte": "^5.0.5",
+		"@wxt-dev/auto-icons": "^1.1.0",
 		"@wxt-dev/module-svelte": "^2.0.4",
 		"prettier": "^3.6.2",
 		"prettier-plugin-svelte": "^3.4.0",

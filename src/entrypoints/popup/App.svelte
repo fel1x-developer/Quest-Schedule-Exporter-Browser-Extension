@@ -39,7 +39,7 @@
 <main class="w-[600px] p-6 bg-white dark:bg-gray-900 min-h-screen">
 	<h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-3">Quest Schedule Exporter</h1>
 	<p class="text-sm text-gray-600 dark:text-gray-400 mb-5">
-		Export your UWaterloo schedule from Quest to iCalendar format!
+		Export your uWaterloo schedule from Quest to iCalendar format!
 	</p>
 
 	<div class="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg mb-5">

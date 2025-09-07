@@ -1,6 +1,6 @@
 {
 	"name": "quest-schedule-exporter",
-	"description": "Schedule exporter for UWaterloo Quest",
+	"description": "Schedule exporter for uWaterloo Quest",
 	"private": true,
 	"version": "0.0.0",
 	"type": "module",

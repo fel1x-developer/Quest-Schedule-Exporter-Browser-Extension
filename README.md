@@ -12,6 +12,13 @@ Edge:
 
 Safari:
 
+## Issue
+
+- Manual copy and paste is required since browser handled copy and paste doesn't work well on Quest.
+- End to End testing on WXT is bit tricky. Still investigating.
+
+If you have solutions for these issues, please submit a pull request.
+
 ## License
 
 This project is licensed under the GNU Affero General Public License v3.0. See the [LICENSE](LICENSE) file for more details.

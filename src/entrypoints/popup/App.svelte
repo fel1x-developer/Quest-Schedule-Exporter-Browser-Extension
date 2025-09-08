@@ -6,7 +6,7 @@
 	let descriptionTemplate = '@code-@section: @name (@type) in @location with @prof';
 	let isProcessing = false;
 	let errorMessage = '';
-	let dateFormat = 'MM/DD/YYYY';
+	let dateFormat = 'DD/MM/YYYY';
 
 	const placeholders = ['@code', '@section', '@name', '@type', '@location', '@prof'];
 
@@ -120,8 +120,8 @@
 				bind:value={dateFormat}
 				class="p-2 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 			>
+				<option value="DD/MM/YYYY">DD/MM/YYYY (default for UW Quest)</option>
 				<option value="MM/DD/YYYY">MM/DD/YYYY</option>
-				<option value="DD/MM/YYYY">DD/MM/YYYY</option>
 				<option value="YYYY/MM/DD">YYYY/MM/DD</option>
 				<option value="YYYY/DD/MM">YYYY/DD/MM</option>
 				<option value="MM/YYYY/DD">MM/YYYY/DD</option>

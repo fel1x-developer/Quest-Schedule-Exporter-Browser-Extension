@@ -84,7 +84,6 @@ export class CalendarExporter {
 
 	private parseData(): void {
 		const courseRegex = createCourseRegex();
-		const sectionRegex = createSectionRegex(this._questData);
 
 		let courseLoopCount = 0;
 		let courseMatches = null;
@@ -92,7 +91,7 @@ export class CalendarExporter {
 		while (true) {
 			if (courseLoopCount++ > this._config.MAX_COURSES) {
 				console.warn('Exceeded loop count while searching for courses');
-				break;
+				throw new Error('Failed Search');
 			}
 
 			courseMatches = courseRegex.exec(this._questData);
@@ -100,46 +99,38 @@ export class CalendarExporter {
 				break;
 			}
 
-			let sectionLoopCount = 0;
-			let sectionMatches = null;
+			// courseMatches[3] now contains the section data
+			const sectionData = courseMatches[3];
 
-			while (true) {
-				if (sectionLoopCount++ > this._config.MAX_SECTIONS) {
-					console.warn('Exceeded loop count while searching for sections');
-					break;
-				}
+			// Use new function to get all instances of sections (including multiple date ranges)
+			const sectionInstances = parseAllSectionInstances(sectionData, this._questData);
 
-				sectionMatches = sectionRegex.exec(courseMatches[0]);
-				if (!sectionMatches) {
-					break;
-				}
+			console.log(`Found ${sectionInstances.length} section instances for ${courseMatches[1]}`);
 
-				if (sectionMatches[4] === 'TBA') {
-					continue;
-				}
-
+			// Create a course for each section instance (each date range)
+			for (const instance of sectionInstances) {
 				const course = new Course(
 					courseMatches[1],
 					courseMatches[2],
 
-					sectionMatches[2],
-					sectionMatches[3],
-					sectionMatches[8],
-					sectionMatches[9],
+					instance.section,
+					instance.component,
+					instance.location,
+					instance.instructor,
 
 					this._dateFormatType,
-					sectionMatches[5],
-					sectionMatches[6],
-					sectionMatches[7],
-					sectionMatches[10],
-					sectionMatches[11],
+					instance.days,
+					instance.startTime,
+					instance.endTime,
+					instance.startDate,
+					instance.endDate,
 					this._config
 				);
 				this._courses.push(course);
 			}
 		}
 
-		if (courseLoopCount === 0 || courseLoopCount >= this._config.MAX_COURSES) {
+		if (courseLoopCount === 0) {
 			throw new Error('Failed Search');
 		}
 	}
@@ -182,47 +173,114 @@ export class CalendarExporter {
 }
 
 function createCourseRegex(): RegExp {
-	const courseHeaderPattern = '(\\w{2,5} \\d{3,4}) - (.*)';
-
-	const anythingBeforePattern = function (pattern: string) {
-		return '(?:(?!' + pattern + ')[\\w|\\W])*';
-	};
-
-	const regex = courseHeaderPattern + anythingBeforePattern(courseHeaderPattern) + '';
-
+	const regex = '([A-Z]{2,7} \\d{2,4}) - ([^\\n]+)\\n([\\s\\S]*?)(?=\\n[A-Z]{2,7} \\d{2,4} -|$)';
 	return new RegExp(regex, 'g');
 }
 
 function createSectionRegex(questData: string): RegExp {
-	const classNumberPattern = '\\d{4}';
+	const classNumberPattern = '\\d{4,5}'; // Quest uses 4-5 digit class numbers
 
 	const timePattern = (function () {
-		const timePattern12h = '1?\\d\\:[0-5]\\d[AP]M';
+		const timePattern12h = '[0-1]?\\d\\:[0-5]\\d[AP]M';
 		const timePattern24h = '[0-2]\\d\\:[0-5]\\d';
 		const is24h = /([0-5]\d[A|P]M)/.exec(questData) === null;
 		return is24h ? timePattern24h : timePattern12h;
 	})();
 
-	const patternOrTba = function (pattern: string) {
-		return '(' + pattern + '|TBA)\\s*';
-	};
+	// Quest format: ClassNbr Section Component DaysTime Room Instructor StartDate - EndDate
+	// Handle both regular time patterns and TBA
+	const dayTimePattern =
+		'(?:([MTWThF]+)\\s+(' + timePattern + ')\\s+-\\s+(' + timePattern + ')|TBA)';
 
 	const regex =
 		'(' +
 		classNumberPattern +
-		')\\s*' +
-		'(\\d{3}\\s*)' +
-		'(\\w{3}\\s*)' +
-		patternOrTba(
-			'([MThWF]{0,6})\\s*' + '(' + timePattern + ')\\ -\\ ' + '(' + timePattern + ')\\s*' + ''
-		) +
-		patternOrTba('[\\w\\ ]+\\s*[0-9]{1,5}[A-Z]?' + '') +
-		patternOrTba('[A-Za-z_\\ \\-\\,\\s]+' + '') +
-		'(\\d{2,4}\\/\\d{2,4}\\/\\d{2,4})\\ -\\ ' +
-		'(\\d{2,4}\\/\\d{2,4}\\/\\d{2,4})' +
-		'';
+		')\\s+' + // Class Number (group 1)
+		'(\\d{3}|[A-Z]{3})\\s+' + // Section (group 2) - can be numbers or letters
+		'(\\w{3})\\s+' + // Component (group 3)
+		dayTimePattern +
+		'\\s+' + // Days & Times (groups 4,5,6 or null if TBA)
+		'([A-Z0-9\\s]*?)\\s+' + // Room (group 7) - allow empty with *
+		'([A-Za-z][^\\d]*?)\\s+' + // Instructor (group 8) - everything until date
+		'(\\d{2}\\/\\d{2}\\/\\d{4})\\s+-\\s+' + // Start Date (group 9)
+		'(\\d{2}\\/\\d{2}\\/\\d{4})'; // End Date (group 10)
 
-	console.log(regex);
+	console.log('Quest section regex:', regex);
 
-	return new RegExp(regex, 'g');
+	return new RegExp(regex, 'gm');
+}
+
+// New function to parse all date ranges for a given section pattern
+function parseAllSectionInstances(sectionData: string, questData: string): Array<any> {
+	const instances = [];
+
+	// First, find all complete section entries (with class number)
+	const fullSectionRegex = createSectionRegex(questData);
+	fullSectionRegex.lastIndex = 0;
+
+	let match;
+	while ((match = fullSectionRegex.exec(sectionData)) !== null) {
+		if (!match[4] || match[4] === 'TBA') {
+			continue;
+		}
+
+		const baseSection = {
+			classNumber: match[1],
+			section: match[2],
+			component: match[3],
+			days: match[4],
+			startTime: match[5],
+			endTime: match[6],
+			location: match[7] ? match[7].trim() : '',
+			instructor: match[8] ? match[8].trim() : '',
+			startDate: match[9],
+			endDate: match[10]
+		};
+
+		instances.push(baseSection);
+
+		// Now look for continuation lines (same days/time but different dates)
+		// Pattern: whitespace + same day pattern + same time + location + instructor + different date
+		const timePattern = (function () {
+			const timePattern12h = '[0-1]?\\d\\:[0-5]\\d[AP]M';
+			const timePattern24h = '[0-2]\\d\\:[0-5]\\d';
+			const is24h = /([0-5]\d[A|P]M)/.exec(questData) === null;
+			return is24h ? timePattern24h : timePattern12h;
+		})();
+
+		const continuationPattern = new RegExp(
+			'\\n\\s*' +
+				'(' +
+				match[4] +
+				')\\s+' + // Same days
+				'(' +
+				timePattern +
+				')\\s+-\\s+(' +
+				timePattern +
+				')\\s+' + // Same times
+				'([^\\n]*?)\\s+' + // Location (might be different)
+				'([A-Za-z][^\\d]*?)\\s+' + // Instructor
+				'(\\d{2}\\/\\d{2}\\/\\d{4})\\s+-\\s+' + // Different start date
+				'(\\d{2}\\/\\d{2}\\/\\d{4})', // Different end date
+			'g'
+		);
+
+		let contMatch;
+		while ((contMatch = continuationPattern.exec(sectionData)) !== null) {
+			instances.push({
+				classNumber: baseSection.classNumber,
+				section: baseSection.section,
+				component: baseSection.component,
+				days: contMatch[1],
+				startTime: contMatch[2],
+				endTime: contMatch[3],
+				location: contMatch[4] ? contMatch[4].trim() : baseSection.location,
+				instructor: contMatch[5] ? contMatch[5].trim() : baseSection.instructor,
+				startDate: contMatch[6],
+				endDate: contMatch[7]
+			});
+		}
+	}
+
+	return instances;
 }

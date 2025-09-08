@@ -25,12 +25,17 @@
 		"format": "prettier --write .",
 		"format:check": "prettier --check .",
 		"postinstall": "wxt prepare",
-		"test": "vitest run",
-		"test:watch": "vitest watch"
+		"test": "bun run test:unit && bun run test:e2e",
+		"test:unit": "vitest run",
+		"test:unit:watch": "vitest watch",
+		"test:e2e": "bunx playwright test",
+		"test:e2e:watch": "bunx playwright test --watch"
 	},
 	"devDependencies": {
+		"@playwright/test": "^1.55.0",
 		"@trivago/prettier-plugin-sort-imports": "^5.2.2",
 		"@tsconfig/svelte": "^5.0.5",
+		"@types/node": "^24.3.1",
 		"@wxt-dev/auto-icons": "^1.1.0",
 		"@wxt-dev/module-svelte": "^2.0.4",
 		"prettier": "^3.6.2",

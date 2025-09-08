@@ -23,10 +23,34 @@ Object.defineProperty(global, 'document', {
 describe('CalendarExporter', () => {
 	let exporter: CalendarExporter;
 	const sampleQuestData = `CS 452 - Real-time Programming
-1234 001 LEC MThWF 08:30 - 09:20 DWE 3522A William B Cowan 09/04/2023 - 12/08/2023
+Status	Units	Grading	Deadlines
+Enrolled
+0.50
+Numeric Grading Basis
+Academic Calendar Deadlines
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001
+LEC
+MThWF 8:30AM - 9:20AM
+DWE 3522A
+William B Cowan
+04/09/2023 - 08/12/2023
 
 MATH 239 - Introduction to Combinatorics
-5678 001 LEC TF 14:30 - 15:50 MC 4020 Jane Smith 09/04/2023 - 12/08/2023`;
+Status	Units	Grading	Deadlines
+Enrolled
+0.50
+Numeric Grading Basis
+Academic Calendar Deadlines
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+5678
+001
+LEC
+TF 2:30PM - 3:50PM
+MC 4020
+Jane Smith
+04/09/2023 - 08/12/2023`;
 
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -84,39 +108,43 @@ MATH 239 - Introduction to Combinatorics
 
 		it('should skip sections with TBA time', () => {
 			const questDataWithTBA = `CS 452 - Real-time Programming
-1234 001 LEC TBA DWE 3522A William B Cowan 09/04/2023 - 12/08/2023`;
+Status	Units	Grading	Deadlines
+Enrolled
+0.50
+Numeric Grading Basis
+Academic Calendar Deadlines
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001
+LEC
+TBA
+DWE 3522A
+William B Cowan
+04/09/2023 - 08/12/2023`;
 
 			const exporterWithTBA = new CalendarExporter('DD/MM/YYYY', questDataWithTBA);
-			(exporterWithTBA as any).parseData();
 
+			// Should throw "Failed Search" when no valid courses found (TBA skipped)
+			expect(() => (exporterWithTBA as any).parseData()).toThrow('Failed Search');
 			expect((exporterWithTBA as any)._courses).toHaveLength(0);
 		});
 
-		it('should not throw error when no courses found (courseLoopCount will be 1)', () => {
+		it('should throw error when no valid courses found', () => {
 			const emptyCourseData = 'No valid course data here';
 			const emptyExporter = new CalendarExporter('DD/MM/YYYY', emptyCourseData);
 
-			// The current logic doesn't throw for this case since courseLoopCount will be 1, not 0
-			expect(() => (emptyExporter as any).parseData()).not.toThrow();
+			// New parser throws "Failed Search" when no valid courses are found
+			expect(() => (emptyExporter as any).parseData()).toThrow('Failed Search');
 			expect((emptyExporter as any)._courses).toHaveLength(0);
 		});
 
-		it('should respect MAX_COURSES limit', () => {
-			const limitedExporter = new CalendarExporter(
-				'DD/MM/YYYY',
-				sampleQuestData,
-				'@code @type in @location',
-				'@code-@section: @name (@type) in @location with @prof',
-				{ MAX_COURSES: 1 }
-			);
+		it('should handle empty course data without throwing', () => {
+			const emptyCourseData = 'No valid course data here';
+			const emptyExporter = new CalendarExporter('DD/MM/YYYY', emptyCourseData);
 
-			// Mock console.warn to verify it's called
-			const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-
-			expect(() => (limitedExporter as any).parseData()).toThrow('Failed Search');
-
-			expect(consoleSpy).toHaveBeenCalledWith('Exceeded loop count while searching for courses');
-			consoleSpy.mockRestore();
+			// New parser should handle empty data gracefully by returning empty array
+			expect(() => (emptyExporter as any).parseData()).toThrow('Failed Search');
+			expect((emptyExporter as any)._courses).toHaveLength(0);
 		});
 	});
 
@@ -210,10 +238,34 @@ MATH 239 - Introduction to Combinatorics
 	describe('regex functions', () => {
 		it('should handle different time formats', () => {
 			const data12h = `CS 452 - Real-time Programming
-1234 001 LEC MThWF 8:30AM - 9:20AM DWE 3522A William B Cowan 09/04/2023 - 12/08/2023`;
+Status	Units	Grading	Deadlines
+Enrolled
+0.50
+Numeric Grading Basis
+Academic Calendar Deadlines
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001
+LEC
+MThWF 8:30AM - 9:20AM
+DWE 3522A
+William B Cowan
+04/09/2023 - 08/12/2023`;
 
 			const data24h = `CS 452 - Real-time Programming
-1234 001 LEC MThWF 08:30 - 09:20 DWE 3522A William B Cowan 09/04/2023 - 12/08/2023`;
+Status	Units	Grading	Deadlines
+Enrolled
+0.50
+Numeric Grading Basis
+Academic Calendar Deadlines
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001
+LEC
+MThWF 8:30AM - 9:20AM
+DWE 3522A
+William B Cowan
+04/09/2023 - 08/12/2023`;
 
 			const exporter12h = new CalendarExporter('DD/MM/YYYY', data12h);
 			const exporter24h = new CalendarExporter('DD/MM/YYYY', data24h);

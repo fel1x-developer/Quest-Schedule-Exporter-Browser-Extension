@@ -51,8 +51,8 @@ export class Course {
 	) {
 		this._config = config;
 		this._meta = {
-			code,
-			name,
+			code: flatten(code),
+			name: flatten(name),
 			section: flatten(section),
 			type: flatten(type),
 			location: flatten(location),

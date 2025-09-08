@@ -7,7 +7,8 @@ export default defineConfig({
 	modules: ['@wxt-dev/module-svelte', '@wxt-dev/auto-icons'],
 	manifest: {
 		name: 'Quest Schedule Exporter',
-		description: 'Since uWaterloo Quest does not support exporting your schedule to an iCalendar file and the UI sucks, this extension allows you to export your schedule to an iCalendar file.',
+		description:
+			'Since uWaterloo Quest does not support exporting your schedule to an iCalendar file and the UI sucks, this extension allows you to export your schedule to an iCalendar file.',
 		category: 'productivity',
 		lang: 'en',
 		icons: {

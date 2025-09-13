@@ -36,6 +36,7 @@
 		"@trivago/prettier-plugin-sort-imports": "^5.2.2",
 		"@tsconfig/svelte": "^5.0.5",
 		"@types/node": "^24.3.1",
+		"@vitest/coverage-v8": "^3.2.4",
 		"@wxt-dev/auto-icons": "^1.1.0",
 		"@wxt-dev/module-svelte": "^2.0.4",
 		"prettier": "^3.6.2",

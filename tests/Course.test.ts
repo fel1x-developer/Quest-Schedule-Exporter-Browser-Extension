@@ -1,4 +1,4 @@
-import { Course } from '../src/lib/Course';
+import { Course, type DateFormat } from '../src/lib/Course';
 import { describe, it, expect, beforeEach } from 'vitest';
 
 describe('Course', () => {
@@ -137,7 +137,7 @@ describe('Course', () => {
 		});
 
 		it('should parse different date formats correctly', () => {
-			const formats = [
+			const formats: { format: DateFormat; date: string }[] = [
 				{ format: 'DD/MM/YYYY', date: '04/09/2023' },
 				{ format: 'MM/DD/YYYY', date: '09/04/2023' },
 				{ format: 'YYYY/MM/DD', date: '2023/09/04' },

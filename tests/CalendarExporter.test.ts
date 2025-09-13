@@ -59,7 +59,7 @@ Jane Smith
 
 	describe('constructor', () => {
 		it('should initialize with correct default values', () => {
-			expect(exporter._dateFormatType).toBe('DD/MM/YYYY');
+			expect(exporter._dateFormat).toBe('DD/MM/YYYY');
 			expect(exporter._questData).toBe(sampleQuestData);
 			expect(exporter._summary).toBe('@code @type in @location');
 			expect(exporter._description).toBe('@code-@section: @name (@type) in @location with @prof');
@@ -235,7 +235,7 @@ William B Cowan
 		});
 	});
 
-	describe('regex functions', () => {
+	describe('edge cases and parsing', () => {
 		it('should handle different time formats', () => {
 			const data12h = `CS 452 - Real-time Programming
 Status	Units	Grading	Deadlines
@@ -272,6 +272,307 @@ William B Cowan
 
 			expect(() => (exporter12h as any).parseData()).not.toThrow();
 			expect(() => (exporter24h as any).parseData()).not.toThrow();
+		});
+
+		it('should handle multi-line instructor names', () => {
+			const questDataWithMultiLineInstructor = `CS 452 - Real-time Programming
+Status	Units	Grading	Deadlines
+Enrolled
+0.50
+Numeric Grading Basis
+Academic Calendar Deadlines
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001
+LEC
+MThWF 8:30AM - 9:20AM
+DWE 3522A
+William B Cowan
+Additional Instructor Info
+04/09/2023 - 08/12/2023`;
+
+			const exporterMultiInstructor = new CalendarExporter(
+				'DD/MM/YYYY',
+				questDataWithMultiLineInstructor
+			);
+			(exporterMultiInstructor as any).parseData();
+
+			expect((exporterMultiInstructor as any)._courses).toHaveLength(1);
+			expect((exporterMultiInstructor as any)._courses[0]._meta.prof).toBe(
+				'William B Cowan, Additional Instructor Info'
+			);
+		});
+
+		it('should handle invalid time patterns', () => {
+			const questDataWithInvalidTime = `CS 452 - Real-time Programming
+Status	Units	Grading	Deadlines
+Enrolled
+0.50
+Numeric Grading Basis
+Academic Calendar Deadlines
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001
+LEC
+InvalidTimeFormat
+DWE 3522A
+William B Cowan
+04/09/2023 - 08/12/2023`;
+
+			const exporterInvalidTime = new CalendarExporter('DD/MM/YYYY', questDataWithInvalidTime);
+			expect(() => (exporterInvalidTime as any).parseData()).toThrow('Failed Search');
+		});
+
+		it('should handle invalid date patterns', () => {
+			const questDataWithInvalidDate = `CS 452 - Real-time Programming
+Status	Units	Grading	Deadlines
+Enrolled
+0.50
+Numeric Grading Basis
+Academic Calendar Deadlines
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001
+LEC
+MThWF 8:30AM - 9:20AM
+DWE 3522A
+William B Cowan
+InvalidDateFormat`;
+
+			const exporterInvalidDate = new CalendarExporter('DD/MM/YYYY', questDataWithInvalidDate);
+			expect(() => (exporterInvalidDate as any).parseData()).toThrow('Failed Search');
+		});
+
+		it('should handle insufficient lines in parsing', () => {
+			const questDataWithInsufficientLines = `CS 452 - Real-time Programming
+Status	Units	Grading	Deadlines
+Enrolled
+0.50
+Numeric Grading Basis
+Academic Calendar Deadlines
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001`;
+
+			const exporterInsufficientLines = new CalendarExporter(
+				'DD/MM/YYYY',
+				questDataWithInsufficientLines
+			);
+			expect(() => (exporterInsufficientLines as any).parseData()).toThrow('Failed Search');
+		});
+
+		it('should skip entries with invalid component format', () => {
+			const questDataWithInvalidComponent = `CS 452 - Real-time Programming
+Status	Units	Grading	Deadlines
+Enrolled
+0.50
+Numeric Grading Basis
+Academic Calendar Deadlines
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001
+INVALIDCOMPONENT
+MThWF 8:30AM - 9:20AM
+DWE 3522A
+William B Cowan
+04/09/2023 - 08/12/2023
+
+5678
+002
+LEC
+TF 2:30PM - 3:50PM
+MC 4020
+Jane Smith
+04/09/2023 - 08/12/2023`;
+
+			const exporterInvalidComponent = new CalendarExporter(
+				'DD/MM/YYYY',
+				questDataWithInvalidComponent
+			);
+			(exporterInvalidComponent as any).parseData();
+
+			expect((exporterInvalidComponent as any)._courses).toHaveLength(1);
+			expect((exporterInvalidComponent as any)._courses[0]._meta.type).toBe('LEC');
+		});
+
+		it('should handle entries without time in days and times field', () => {
+			const questDataWithoutTime = `CS 452 - Real-time Programming
+Status	Units	Grading	Deadlines
+Enrolled
+0.50
+Numeric Grading Basis
+Academic Calendar Deadlines
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001
+LEC
+MThWF
+DWE 3522A
+William B Cowan
+04/09/2023 - 08/12/2023`;
+
+			const exporterWithoutTime = new CalendarExporter('DD/MM/YYYY', questDataWithoutTime);
+			expect(() => (exporterWithoutTime as any).parseData()).toThrow('Failed Search');
+		});
+
+		it('should handle break conditions in parsing loop', () => {
+			const questDataWithBreakCondition = `CS 452 - Real-time Programming
+Status	Units	Grading	Deadlines
+Enrolled
+0.50
+Numeric Grading Basis
+Academic Calendar Deadlines
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001
+LEC
+MThWF 8:30AM - 9:20AM
+DWE 3522A
+William B Cowan
+04/09/2023 - 08/12/2023
+
+9999`;
+
+			const exporterWithBreakCondition = new CalendarExporter(
+				'DD/MM/YYYY',
+				questDataWithBreakCondition
+			);
+			(exporterWithBreakCondition as any).parseData();
+
+			expect((exporterWithBreakCondition as any)._courses).toHaveLength(1);
+		});
+
+		it('should detect and break on new class number pattern', () => {
+			const questDataWithNewClassNumber = `CS 452 - Real-time Programming
+Status	Units	Grading	Deadlines
+Enrolled
+0.50
+Numeric Grading Basis
+Academic Calendar Deadlines
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001
+LEC
+MThWF 8:30AM - 9:20AM
+DWE 3522A
+William B Cowan
+04/09/2023 - 08/12/2023
+
+5678
+002
+LEC
+TF 2:30PM - 3:50PM
+MC 4020
+Jane Smith
+04/09/2023 - 08/12/2023`;
+
+			const exporterWithNewClassNumber = new CalendarExporter(
+				'DD/MM/YYYY',
+				questDataWithNewClassNumber
+			);
+			(exporterWithNewClassNumber as any).parseData();
+
+			expect((exporterWithNewClassNumber as any)._courses).toHaveLength(2);
+		});
+
+		it('should handle non-matching date range in instructor parsing', () => {
+			const questDataNonMatchingDate = `CS 452 - Real-time Programming
+Status	Units	Grading	Deadlines
+Enrolled
+0.50
+Numeric Grading Basis
+Academic Calendar Deadlines
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001
+LEC
+MThWF 8:30AM - 9:20AM
+DWE 3522A
+William B Cowan
+NonMatchingDatePattern`;
+
+			const exporterNonMatchingDate = new CalendarExporter('DD/MM/YYYY', questDataNonMatchingDate);
+			expect(() => (exporterNonMatchingDate as any).parseData()).toThrow('Failed Search');
+		});
+
+		it('should successfully parse complete course data with all fields', () => {
+			const completeQuestData = `CS 135 - Designing Functional Programs
+Status	Units	Grading	Deadlines
+Enrolled
+0.50
+Numeric Grading Basis
+Academic Calendar Deadlines
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+12345
+001
+LEC
+MWF 1:30PM - 2:20PM
+MC 4020
+Prof Johnson
+05/01/2024 - 08/15/2024`;
+
+			const completeExporter = new CalendarExporter('MM/DD/YYYY', completeQuestData);
+			(completeExporter as any).parseData();
+
+			expect((completeExporter as any)._courses).toHaveLength(1);
+			const course = (completeExporter as any)._courses[0];
+			expect(course._meta.code).toBe('CS 135');
+			expect(course._meta.name).toBe('Designing Functional Programs');
+			expect(course._meta.type).toBe('LEC');
+			expect(course._meta.prof).toBe('Prof Johnson');
+			expect(course._meta.location).toBe('MC 4020');
+		});
+
+		it('should parse course with different time format patterns', () => {
+			const timeFormatQuestData = `MATH 138 - Calculus 2 for Honours Mathematics
+Status	Units	Grading	Deadlines
+Enrolled
+0.50
+Numeric Grading Basis
+Academic Calendar Deadlines
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+67890
+002
+LEC
+TTh 10:30AM - 11:50AM
+MC 2065
+Dr Smith
+01/09/2024 - 04/12/2024`;
+
+			const timeFormatExporter = new CalendarExporter('DD/MM/YYYY', timeFormatQuestData);
+			(timeFormatExporter as any).parseData();
+
+			expect((timeFormatExporter as any)._courses).toHaveLength(1);
+			const course = (timeFormatExporter as any)._courses[0];
+			expect(course._meta.code).toBe('MATH 138');
+			expect(course._meta.name).toBe('Calculus 2 for Honours Mathematics');
+		});
+
+		it('should skip entry with invalid time format and parse others', () => {
+			const questData = `CS 452 - Real-time Programming
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001
+LEC
+Some:InvalidTime
+DWE 3522A
+William B Cowan
+04/09/2023 - 08/12/2023
+
+MATH 239 - Introduction to Combinatorics
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+5678
+001
+LEC
+TF 2:30PM - 3:50PM
+MC 4020
+Jane Smith
+04/09/2023 - 08/12/2023
+`;
+			const exporter = new CalendarExporter('DD/MM/YYYY', questData);
+			(exporter as any).parseData();
+			expect((exporter as any)._courses).toHaveLength(1);
+			expect((exporter as any)._courses[0]._meta.code).toBe('MATH 239');
 		});
 	});
 });

@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { CalendarExporter } from '../../lib/CalendarExporter';
+	import type { DateFormat } from '../../lib/Course';
 
 	let scheduleData = '';
 	let summaryTemplate = '@code @type in @location';
 	let descriptionTemplate = '@code-@section: @name (@type) in @location with @prof';
 	let isProcessing = false;
 	let errorMessage = '';
-	let dateFormat = 'DD/MM/YYYY';
+	let dateFormat: DateFormat = 'DD/MM/YYYY';
 
 	const placeholders = ['@code', '@section', '@name', '@type', '@location', '@prof'];
 

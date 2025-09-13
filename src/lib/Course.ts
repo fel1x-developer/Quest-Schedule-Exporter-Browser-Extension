@@ -6,6 +6,14 @@ interface Config {
 	}>;
 }
 
+export type DateFormat =
+	| 'DD/MM/YYYY'
+	| 'MM/DD/YYYY'
+	| 'YYYY/MM/DD'
+	| 'YYYY/DD/MM'
+	| 'MM/YYYY/DD'
+	| 'DD/YYYY/MM';
+
 type NullableDate = Date | null;
 
 type Weekday = 'm' | 't' | 'w' | 'h' | 'f';
@@ -41,7 +49,7 @@ export class Course {
 		type: string,
 		location: string,
 		prof: string,
-		dateFormat: string,
+		dateFormat: DateFormat,
 		classDays: string,
 		startTime: string,
 		endTime: string,
@@ -192,13 +200,13 @@ function flatten(s: string): string {
 	return flatString.trim();
 }
 
-function parseDate(dateFormatType: string, dateString: string): Date {
+function parseDate(dateFormat: DateFormat, dateString: string): Date {
 	const args = dateString.split('/').map((i) => parseInt(i));
 	let year;
 	let month;
 	let day;
 
-	switch (dateFormatType) {
+	switch (dateFormat) {
 		case 'DD/MM/YYYY': {
 			year = args[2];
 			month = args[1] - 1;
@@ -239,10 +247,6 @@ function parseDate(dateFormatType: string, dateString: string): Date {
 			month = args[2] - 1;
 			day = args[0];
 			break;
-		}
-
-		default: {
-			return new Date(dateString);
 		}
 	}
 

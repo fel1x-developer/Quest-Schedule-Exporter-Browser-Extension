@@ -1,10 +1,22 @@
 import { test, expect } from './fixtures';
 
 const sampleQuestData = `CS 452 - Real-time Programming
-1234 001 LEC MWF 10:30AM - 11:20AM MC 2066 William B Cowan 01/06/2025 - 04/04/2025
+1234
+001
+LEC
+MWF 10:30AM - 11:20AM
+MC 2066
+William B Cowan
+01/06/2025 - 04/04/2025
 
 MATH 239 - Introduction to Combinatorics
-5678 001 LEC TTh 01:00PM - 02:20PM MC 4045 David R Cheriton 01/06/2025 - 04/04/2025`;
+5678
+001
+LEC
+TTh 01:00PM - 02:20PM
+MC 4045
+David R Cheriton
+01/06/2025 - 04/04/2025`;
 
 test.describe('Basic Extension Functionality', () => {
 	test('extension popup loads correctly', async ({ context, extensionId }) => {
@@ -118,31 +130,54 @@ test.describe('Basic Extension Functionality', () => {
 		const page = await context.newPage();
 		await page.goto(`chrome-extension://${extensionId}/popup.html`);
 
-		// Setup download mock
+		// Setup more robust download mock
 		await page.evaluate(() => {
 			(window as any).downloadAttempts = [];
-			const originalCreateElement = document.createElement;
 
+			// Override createElement to catch anchor elements
+			const originalCreateElement = document.createElement;
 			document.createElement = function (tagName: string) {
 				const element = originalCreateElement.call(this, tagName);
 				if (tagName.toLowerCase() === 'a') {
+					const originalClick = element.click;
 					element.click = function () {
 						(window as any).downloadAttempts.push({
 							href: element.getAttribute('href'),
 							download: element.getAttribute('download')
 						});
+						// Don't call original click to avoid actual download
 					};
 				}
 				return element;
 			};
+
+			// Also catch console errors
+			(window as any).exportErrors = [];
+			const originalConsoleError = console.error;
+			console.error = function (...args) {
+				(window as any).exportErrors.push(args.join(' '));
+				originalConsoleError.apply(console, args);
+			};
 		});
 
-		// Data with TBA course (should be skipped) - using format that works
+		// Use properly formatted test data
 		const dataWithTBA = `CS 452 - Real-time Programming
-1234 001 LEC TBA MC 2066 William B Cowan 01/06/2025 - 04/04/2025
+1234
+001
+LEC
+TBA
+MC 2066
+William B Cowan
+01/06/2025 - 04/04/2025
 
 MATH 239 - Introduction to Combinatorics
-5678 001 LEC TTh 01:00PM - 02:20PM MC 4045 David R Cheriton 01/06/2025 - 04/04/2025`;
+5678
+001
+LEC
+TTh 01:00PM - 02:20PM
+MC 4045
+David R Cheriton
+01/06/2025 - 04/04/2025`;
 
 		await page.locator('#schedule-data').fill(dataWithTBA);
 		await page.locator('button').click();
@@ -150,29 +185,27 @@ MATH 239 - Introduction to Combinatorics
 		// Wait for processing
 		await page.waitForTimeout(2000);
 
+		// Check for any export errors first
+		const exportErrors = await page.evaluate(() => (window as any).exportErrors);
+		if (exportErrors && exportErrors.length > 0) {
+			console.log('Export errors:', exportErrors);
+		}
+
 		// Check that export was attempted
 		const downloadAttempts = await page.evaluate(() => (window as any).downloadAttempts);
 		expect(downloadAttempts?.length || 0).toBeGreaterThan(0);
 
 		if (downloadAttempts && downloadAttempts[0]) {
 			const calendarData = decodeURIComponent(downloadAttempts[0].href.split(',')[1]);
-			console.log('Calendar data:', calendarData); // Debug log
 
-			// The test expectation should be that TBA courses are filtered out
-			// If both courses are filtered out, that might be due to the regex not matching correctly
-			// Let's check if any events exist at all
-			const hasEvents = calendarData.includes('BEGIN:VEVENT');
+			// Verify calendar structure
+			expect(calendarData).toContain('BEGIN:VCALENDAR');
+			expect(calendarData).toContain('END:VCALENDAR');
 
-			if (hasEvents) {
-				// If events exist, MATH 239 should be there (not TBA), CS 452 should not (TBA)
+			// Should contain MATH 239 (not TBA) but not CS 452 (TBA)
+			if (calendarData.includes('BEGIN:VEVENT')) {
 				expect(calendarData).toContain('MATH 239');
 				expect(calendarData).not.toContain('CS 452');
-			} else {
-				// If no events, the regex might not be matching the format - this is also a valid result
-				// as it shows TBA filtering is working (perhaps too aggressively)
-				console.log('No events found - TBA filtering may be working correctly');
-				expect(calendarData).toContain('BEGIN:VCALENDAR');
-				expect(calendarData).toContain('END:VCALENDAR');
 			}
 		}
 	});

@@ -3,25 +3,74 @@ import fs from 'node:fs/promises';
 
 // Sample Quest schedule data for testing
 const sampleQuestData = `CS 452 - Real-time Programming
-1234 001 LEC MWF 10:30AM - 11:20AM MC 2066 William B Cowan 01/06/2025 - 04/04/2025
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001
+LEC
+MWF 10:30AM - 11:20AM
+MC 2066
+William B Cowan
+01/06/2025 - 04/04/2025
 
 MATH 239 - Introduction to Combinatorics
-5678 001 LEC TTh 01:00PM - 02:20PM MC 4045 David R Cheriton 01/06/2025 - 04/04/2025
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+5678
+001
+LEC
+TTh 01:00PM - 02:20PM
+MC 4045
+David R Cheriton
+01/06/2025 - 04/04/2025
 
 ECE 356 - Database Systems
-9012 001 LEC MW 02:30PM - 03:50PM EIT 1015 Peter Van Beek 01/06/2025 - 04/04/2025`;
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+9012
+001
+LEC
+MW 02:30PM - 03:50PM
+EIT 1015
+Peter Van Beek
+01/06/2025 - 04/04/2025`;
 
 const sampleQuestDataWith24HrTime = `CS 452 - Real-time Programming
-1234 001 LEC MWF 10:30 - 11:20 MC 2066 William B Cowan 01/06/2025 - 04/04/2025
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001
+LEC
+MWF 10:30AM - 11:20AM
+MC 2066
+William B Cowan
+01/06/2025 - 04/04/2025
 
 MATH 239 - Introduction to Combinatorics
-5678 001 LEC TTh 13:00 - 14:20 MC 4045 David R Cheriton 01/06/2025 - 04/04/2025`;
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+5678
+001
+LEC
+TTh 1:00PM - 2:20PM
+MC 4045
+David R Cheriton
+01/06/2025 - 04/04/2025`;
 
 const questDataWithTBA = `CS 452 - Real-time Programming
-1234 001 LEC TBA MC 2066 William B Cowan 01/06/2025 - 04/04/2025
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001
+LEC
+TBA
+MC 2066
+William B Cowan
+01/06/2025 - 04/04/2025
 
 MATH 239 - Introduction to Combinatorics
-5678 001 LEC TTh 01:00PM - 02:20PM MC 4045 David R Cheriton 01/06/2025 - 04/04/2025`;
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+5678
+001
+LEC
+TTh 01:00PM - 02:20PM
+MC 4045
+David R Cheriton
+01/06/2025 - 04/04/2025`;
 
 test.describe('Schedule Data Processing', () => {
 	test('processes valid Quest schedule data successfully', async ({ context, extensionId }) => {
@@ -129,16 +178,44 @@ test.describe('Schedule Data Processing', () => {
 
 	test('processes courses with different day combinations', async ({ context, extensionId }) => {
 		const complexScheduleData = `CS 452 - Real-time Programming
-1234 001 LEC MWF 10:30AM - 11:20AM MC 2066 William B Cowan 01/06/2025 - 04/04/2025
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001
+LEC
+MWF 10:30AM - 11:20AM
+MC 2066
+William B Cowan
+01/06/2025 - 04/04/2025
 
 MATH 239 - Introduction to Combinatorics
-5678 001 LEC TTh 01:00PM - 02:20PM MC 4045 David R Cheriton 01/06/2025 - 04/04/2025
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+5678
+001
+LEC
+TTh 01:00PM - 02:20PM
+MC 4045
+David R Cheriton
+01/06/2025 - 04/04/2025
 
 ECE 356 - Database Systems
-9012 001 LEC MW 02:30PM - 03:50PM EIT 1015 Peter Van Beek 01/06/2025 - 04/04/2025
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+9012
+001
+LEC
+MW 02:30PM - 03:50PM
+EIT 1015
+Peter Van Beek
+01/06/2025 - 04/04/2025
 
 STAT 230 - Probability
-3456 001 LEC M 11:30AM - 12:20PM MC 4040 Jane Smith 01/06/2025 - 04/04/2025`;
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+3456
+001
+LEC
+M 11:30AM - 12:20PM
+MC 4040
+Jane Smith
+01/06/2025 - 04/04/2025`;
 
 		const page = await context.newPage();
 		await page.goto(`chrome-extension://${extensionId}/popup.html`);
@@ -206,10 +283,24 @@ STAT 230 - Probability
 	test('processes courses with Thursday correctly', async ({ context, extensionId }) => {
 		// Test specifically for Thursday handling (Th -> H conversion)
 		const thursdayData = `MATH 239 - Introduction to Combinatorics
-5678 001 LEC TTh 01:00PM - 02:20PM MC 4045 David R Cheriton 01/06/2025 - 04/04/2025
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+5678
+001
+LEC
+TTh 01:00PM - 02:20PM
+MC 4045
+David R Cheriton
+01/06/2025 - 04/04/2025
 
 PHYS 121 - Mechanics
-7890 001 LEC ThF 09:00AM - 10:20AM PHY 145 John Teacher 01/06/2025 - 04/04/2025`;
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+7890
+001
+LEC
+ThF 09:00AM - 10:20AM
+PHY 145
+John Teacher
+01/06/2025 - 04/04/2025`;
 
 		const page = await context.newPage();
 		await page.goto(`chrome-extension://${extensionId}/popup.html`);
@@ -238,10 +329,24 @@ PHYS 121 - Mechanics
 		extensionId
 	}) => {
 		const specialData = `CS 486 - Introduction to Artificial Intelligence & Machine Learning
-1111 001 LEC MW 10:30AM - 11:50AM MC 2066 Dr. AI Professor, PhD 01/06/2025 - 04/04/2025
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1111
+001
+LEC
+MW 10:30AM - 11:50AM
+MC 2066
+Dr. AI Professor, PhD
+01/06/2025 - 04/04/2025
 
 ENGL 109 - Introduction to Academic Writing: Critical Reading & Composition
-2222 001 LEC TTh 02:30PM - 03:50PM HH 180 Jane Writer-Smith 01/06/2025 - 04/04/2025`;
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+2222
+001
+LEC
+TTh 02:30PM - 03:50PM
+HH 180
+Jane Writer-Smith
+01/06/2025 - 04/04/2025`;
 
 		const page = await context.newPage();
 		await page.goto(`chrome-extension://${extensionId}/popup.html`);

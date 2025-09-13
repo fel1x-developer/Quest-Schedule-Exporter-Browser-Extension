@@ -2,10 +2,24 @@ import { test, expect } from './fixtures';
 import fs from 'node:fs/promises';
 
 const sampleQuestData = `CS 452 - Real-time Programming
-1234 001 LEC MWF 10:30AM - 11:20AM MC 2066 William B Cowan 01/06/2025 - 04/04/2025
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001
+LEC
+MWF 10:30AM - 11:20AM
+MC 2066
+William B Cowan
+01/06/2025 - 04/04/2025
 
 MATH 239 - Introduction to Combinatorics
-5678 001 LEC TTh 01:00PM - 02:20PM MC 4045 David R Cheriton 01/06/2025 - 04/04/2025`;
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+5678
+001
+LEC
+TTh 01:00PM - 02:20PM
+MC 4045
+David R Cheriton
+01/06/2025 - 04/04/2025`;
 
 test.describe('Export Functionality', () => {
 	test('creates download with correct filename and content', async ({ context, extensionId }) => {
@@ -13,6 +27,7 @@ test.describe('Export Functionality', () => {
 		await page.goto(`chrome-extension://${extensionId}/popup.html`);
 
 		const textarea = page.locator('#schedule-data');
+		await expect(textarea).toBeVisible();
 		await textarea.fill(sampleQuestData);
 
 		// Set up download promise before clicking
@@ -46,6 +61,7 @@ test.describe('Export Functionality', () => {
 		await page.goto(`chrome-extension://${extensionId}/popup.html`);
 
 		const textarea = page.locator('#schedule-data');
+		await expect(textarea).toBeVisible();
 		await textarea.fill(sampleQuestData);
 
 		const downloadPromise = page.waitForEvent('download');
@@ -79,15 +95,30 @@ test.describe('Export Functionality', () => {
 
 	test('handles special characters in course data', async ({ context, extensionId }) => {
 		const specialCharData = `CS 452 - Real-time Programming & Advanced Concepts
-1234 001 LEC MWF 10:30AM - 11:20AM MC 2066 Dr. William B. Cowan, PhD 01/06/2025 - 04/04/2025
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001
+LEC
+MWF 10:30AM - 11:20AM
+MC 2066
+Dr. William B. Cowan, PhD
+01/06/2025 - 04/04/2025
 
 MATH 239 - Introduction to Combinatorics (Advanced)
-5678 001 LEC TTh 01:00PM - 02:20PM MC 4045 Prof. David R. Cheriton 01/06/2025 - 04/04/2025`;
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+5678
+001
+LEC
+TTh 01:00PM - 02:20PM
+MC 4045
+Prof. David R. Cheriton
+01/06/2025 - 04/04/2025`;
 
 		const page = await context.newPage();
 		await page.goto(`chrome-extension://${extensionId}/popup.html`);
 
 		const textarea = page.locator('#schedule-data');
+		await expect(textarea).toBeVisible();
 		await textarea.fill(specialCharData);
 
 		const downloadPromise = page.waitForEvent('download');
@@ -106,12 +137,20 @@ MATH 239 - Introduction to Combinatorics (Advanced)
 
 	test('export works with single day course', async ({ context, extensionId }) => {
 		const singleDayData = `CS 452 - Real-time Programming
-1234 001 LEC F 10:30AM - 11:20AM MC 2066 William B Cowan 01/06/2025 - 01/06/2025`;
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001
+LEC
+F 10:30AM - 11:20AM
+MC 2066
+William B Cowan
+01/06/2025 - 01/06/2025`;
 
 		const page = await context.newPage();
 		await page.goto(`chrome-extension://${extensionId}/popup.html`);
 
 		const textarea = page.locator('#schedule-data');
+		await expect(textarea).toBeVisible();
 		await textarea.fill(singleDayData);
 
 		const downloadPromise = page.waitForEvent('download');
@@ -131,17 +170,44 @@ MATH 239 - Introduction to Combinatorics (Advanced)
 
 	test('export handles course with multiple sections', async ({ context, extensionId }) => {
 		const multiSectionData = `CS 452 - Real-time Programming
-1234 001 LEC MWF 10:30AM - 11:20AM MC 2066 William B Cowan 01/06/2025 - 04/04/2025
-1235 002 TUT T 02:30PM - 03:20PM MC 2065 John Doe 01/06/2025 - 04/04/2025
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001
+LEC
+MWF 10:30AM - 11:20AM
+MC 2066
+William B Cowan
+01/06/2025 - 04/04/2025
+1235
+002
+TUT
+T 02:30PM - 03:20PM
+MC 2065
+John Doe
+01/06/2025 - 04/04/2025
 
 MATH 239 - Introduction to Combinatorics
-5678 001 LEC TTh 01:00PM - 02:20PM MC 4045 David R Cheriton 01/06/2025 - 04/04/2025
-5679 002 LAB W 03:30PM - 04:20PM MC 3003 Jane Smith 01/06/2025 - 04/04/2025`;
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+5678
+001
+LEC
+TTh 01:00PM - 02:20PM
+MC 4045
+David R Cheriton
+01/06/2025 - 04/04/2025
+5679
+002
+LAB
+W 03:30PM - 04:20PM
+MC 3003
+Jane Smith
+01/06/2025 - 04/04/2025`;
 
 		const page = await context.newPage();
 		await page.goto(`chrome-extension://${extensionId}/popup.html`);
 
 		const textarea = page.locator('#schedule-data');
+		await expect(textarea).toBeVisible();
 		await textarea.fill(multiSectionData);
 
 		const downloadPromise = page.waitForEvent('download');
@@ -172,6 +238,7 @@ MATH 239 - Introduction to Combinatorics
 		await page.goto(`chrome-extension://${extensionId}/popup.html`);
 
 		const textarea = page.locator('#schedule-data');
+		await expect(textarea).toBeVisible();
 		await textarea.fill(sampleQuestData);
 
 		const downloadPromise = page.waitForEvent('download');
@@ -192,12 +259,20 @@ MATH 239 - Introduction to Combinatorics
 
 	test('export with empty location handles gracefully', async ({ context, extensionId }) => {
 		const noLocationData = `CS 452 - Real-time Programming
-1234 001 LEC MWF 10:30AM - 11:20AM  William B Cowan 01/06/2025 - 04/04/2025`;
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001
+LEC
+MWF 10:30AM - 11:20AM
+TBD
+William B Cowan
+01/06/2025 - 04/04/2025`;
 
 		const page = await context.newPage();
 		await page.goto(`chrome-extension://${extensionId}/popup.html`);
 
 		const textarea = page.locator('#schedule-data');
+		await expect(textarea).toBeVisible();
 		await textarea.fill(noLocationData);
 
 		const downloadPromise = page.waitForEvent('download');
@@ -220,6 +295,7 @@ MATH 239 - Introduction to Combinatorics
 		await page.goto(`chrome-extension://${extensionId}/popup.html`);
 
 		const textarea = page.locator('#schedule-data');
+		await expect(textarea).toBeVisible();
 		await textarea.fill(sampleQuestData);
 
 		// Track DOM changes during export

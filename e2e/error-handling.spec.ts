@@ -5,19 +5,47 @@ Random text without proper format
 No course codes or times here`;
 
 const malformedQuestData = `CS 452 - Real-time Programming
-1234 001 LEC INVALID_DAY 10:30AM - 11:20AM MC 2066 William B Cowan 01/06/2025 - 04/04/2025`;
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001
+LEC
+INVALID_DAY 10:30AM - 11:20AM
+MC 2066
+William B Cowan
+01/06/2025 - 04/04/2025`;
 
 const questDataWithInvalidDates = `CS 452 - Real-time Programming
-1234 001 LEC MWF 10:30AM - 11:20AM MC 2066 William B Cowan 99/99/9999 - 99/99/9999`;
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001
+LEC
+MWF 10:30AM - 11:20AM
+MC 2066
+William B Cowan
+99/99/9999 - 99/99/9999`;
 
 const questDataWithInvalidTimes = `CS 452 - Real-time Programming
-1234 001 LEC MWF 25:99PM - 30:99PM MC 2066 William B Cowan 01/06/2025 - 04/04/2025`;
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001
+LEC
+MWF 25:99PM - 30:99PM
+MC 2066
+William B Cowan
+01/06/2025 - 04/04/2025`;
 
 const questDataTooManyCourses = Array.from(
 	{ length: 25 },
 	(_, i) =>
 		`CS${i.toString().padStart(3, '0')} - Course ${i}
-${(1000 + i).toString()} 001 LEC MWF 10:30AM - 11:20AM MC 2066 Prof ${i} 01/06/2025 - 04/04/2025`
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+${(1000 + i).toString()}
+001
+LEC
+MWF 10:30AM - 11:20AM
+MC 2066
+Prof ${i}
+01/06/2025 - 04/04/2025`
 ).join('\n\n');
 
 test.describe('Error Handling', () => {
@@ -301,7 +329,14 @@ test.describe('Error Handling', () => {
 
 		// Second attempt - with valid data
 		const validData = `CS 452 - Real-time Programming
-1234 001 LEC MWF 10:30AM - 11:20AM MC 2066 William B Cowan 01/06/2025 - 04/04/2025`;
+Class Nbr	Section	Component	Days & Times	Room	Instructor	Start/End Date
+1234
+001
+LEC
+MWF 10:30AM - 11:20AM
+MC 2066
+William B Cowan
+01/06/2025 - 04/04/2025`;
 
 		const textarea = page.locator('#schedule-data');
 		await textarea.fill(validData);

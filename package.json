@@ -2,7 +2,7 @@
 	"name": "quest-schedule-exporter-browser-extension",
 	"description": "Schedule exporting browser extension for uWaterloo Quest",
 	"private": true,
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"type": "module",
 	"scripts": {
 		"dev": "wxt",
